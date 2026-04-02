@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Frontend service - React + Vite served by nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    container_name: invoice-frontend
+    ports:
+      - "3001:3001"
+    networks:
+      - invoice-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=/api/v1
+
+  # Backend service - FastAPI with Uvicorn
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: invoice-backend
+    ports:
+      - "8000:8000"
+    networks:
+      - invoice-network
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+networks:
+  invoice-network:
+    driver: bridge
+
+volumes: {}
